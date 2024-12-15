@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=gentilniyo@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "24865:80"
+      - "24866:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - web
+
+  myportfolio:
+    build:
+      context: ./Gentil_Portifolio/
+    image: gentil-portfolio
+    container_name: myportfolio
+    volumes:
+      - ./Gentil_Portifolio:/usr/local/apache2/htdocs/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myportfolio.rule=Host(`www.gentilport.rw`)"
+      - "traefik.http.routers.myportfolio.entrypoints=websecure" # Use websecure for HTTPS
+      - "traefik.http.routers.myportfolio.tls=true"
+      - "traefik.http.routers.myportfolio.tls.certresolver=myresolver"
+    networks:
+      - web
+
+  24863aucaed:
+    build:
+      context: ./24863.auca.ac.rw/
+
+    image: 24863-auca-ac-rw
+    container_name: 24863aucaed
+    volumes:
+      - ./24863.auca.ac.rw:/usr/local/apache2/htdocs/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aucaed.rule=Host(`www.auca24863.rw`)"
+      - "traefik.http.routers.aucaed.entrypoints=websecure" # Use websecure for HTTPS
+      - "traefik.http.routers.aucaed.tls=true"
+      - "traefik.http.routers.aucaed.tls.certresolver=myresolver"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
